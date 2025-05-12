@@ -1,0 +1,47 @@
+Sub SendSSLExpiryReminders()
+    Dim OutlookApp As Object
+    Dim OutlookMail As Object
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim website As String
+    Dim url As String
+    Dim renewalDate As Date
+    Dim today As Date
+    Dim targetDate As Date
+    Dim recipient As String
+
+    Set ws = ThisWorkbook.Sheets(1) ' Adjust if your sheet has a different name
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+    today = Date
+    targetDate = today + 7
+    recipient = "your-email@example.com" ' Replace with your actual email
+
+    On Error Resume Next
+    Set OutlookApp = GetObject(, "Outlook.Application")
+    If OutlookApp Is Nothing Then Set OutlookApp = CreateObject("Outlook.Application")
+    On Error GoTo 0
+
+    For i = 2 To lastRow ' Assuming row 1 is header
+        website = ws.Cells(i, 1).Value
+        url = ws.Cells(i, 2).Value
+        If IsDate(ws.Cells(i, 4).Value) Then
+            renewalDate = ws.Cells(i, 4).Value
+
+            If renewalDate = targetDate Then
+                Set OutlookMail = OutlookApp.CreateItem(0)
+                With OutlookMail
+                    .To = recipient
+                    .Subject = "SSL Expiry Reminder: " & website
+                    .Body = "The SSL certificate for " & website & " (" & url & ") is expiring on " & _
+                            Format(renewalDate, "dd-mmm-yyyy") & "." & vbCrLf & "Please renew it in time."
+                    .Send ' Or use .Display to review before sending
+                End With
+
+                ws.Cells(i, 5).Value = "Reminder Sent"
+            End If
+        End If
+    Next i
+
+    MsgBox "Reminder emails sent for matching entries.", vbInformation
+End Sub
