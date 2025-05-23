@@ -12,3 +12,99 @@ services:
 FROM nginx:1.17.1-alpine
 WORKDIR /usr/share/nginx/html/
 COPY . .
+
+
+🧾 Your Setup Summary
+Nginx is built using a Dockerfile (Dockerfile-local)
+
+The website files are mounted to: /usr/share/nginx/html/
+
+It runs on port 8080 (you access it via http://localhost:8080)
+
+To add security headers, you need to:
+
+✅ Step 1: Create a Custom Nginx Config
+Create a file named nginx.conf in the root of your project (same level as your docker-compose.yml), and add:
+
+nginx
+Copy
+Edit
+events {}
+
+http {
+    server {
+        listen 80;
+        server_name localhost;
+
+        root /usr/share/nginx/html;
+        index index.html;
+
+        location / {
+            try_files $uri $uri/ =404;
+
+            # 🔒 Security Headers
+            add_header X-Content-Type-Options "nosniff";
+            add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+            add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
+            add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none';";
+        }
+    }
+}
+✅ Step 2: Modify Your Dockerfile
+Update Dockerfile-local to use your custom nginx.conf. If it currently uses a default config, modify it like this:
+
+Dockerfile
+Copy
+Edit
+FROM nginx:alpine
+
+# Copy custom config
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Copy your site
+COPY . /usr/share/nginx/html
+If you're already using COPY or other instructions, make sure they do not overwrite /etc/nginx/nginx.conf.
+
+✅ Step 3: Rebuild and Run
+Now rebuild the Docker image and run it again:
+
+bash
+Copy
+Edit
+docker-compose down
+docker-compose up --build -d
+✅ Step 4: Verify the Headers
+From your terminal:
+
+bash
+Copy
+Edit
+curl -I http://localhost:8080
+You should see output like:
+
+pgsql
+Copy
+Edit
+X-Content-Type-Options: nosniff
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none';
+Or verify in your browser’s DevTools > Network tab > Headers.
+
+Would you like help creating the Dockerfile-local or seeing a full example of the final setup?
+
+
+Step 2: Modify Your Dockerfile-local
+Update your Dockerfile-local to copy the nginx.conf into the container:
+
+Dockerfile
+Copy
+Edit
+FROM nginx:1.17.1-alpine
+
+# Copy custom Nginx config
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Copy static files to web root
+WORKDIR /usr/share/nginx/html/
+COPY . .
