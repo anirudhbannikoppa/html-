@@ -9,3 +9,6 @@ services:
       - ./:/usr/share/nginx/html/
     ports:
       - '8080:80'
+FROM nginx:1.17.1-alpine
+WORKDIR /usr/share/nginx/html/
+COPY . .
